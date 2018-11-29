@@ -225,9 +225,9 @@ size_t const kKeySize = kCCKeySizeAES128;
 //RSA公钥解密
 - (NSString *)decryRSAPublic:(NSString *)str publicKeyBase64:(NSString *)publicKey
 {
-    NSData *plainData = [str dataUsingEncoding:NSUTF8StringEncoding];
+    NSData *plainData = [[NSData alloc] initWithBase64EncodedString:str options:0];
     NSData *cipherData = [DDRSAWrapper decryptWithPublicKey:[DDRSAWrapper RSAPublicKeyFromBase64:publicKey] cipherData:plainData];
-    NSString * cipherString = [cipherData base64EncodedStringWithOptions:0];
+    NSString * cipherString = [[NSString alloc]initWithData:cipherData encoding:NSUTF8StringEncoding];
     return cipherString;
 }
 
