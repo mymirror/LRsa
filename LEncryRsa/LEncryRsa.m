@@ -185,6 +185,97 @@ size_t const kKeySize = kCCKeySizeAES128;
     return nil;
 }
 
+//aes加密 key位base64 字符串 iv偏移量为16位
+- (NSString *)encryptAES:(NSString *)content key:(NSString *)base64Encryptkey iv:(NSString *)iv
+{
+    NSData *contentData = [content dataUsingEncoding:NSUTF8StringEncoding];
+    NSUInteger dataLength = contentData.length;
+    // 为结束符'\\0' +1
+    char keyPtr[kKeySize +1 ];
+    memset(keyPtr, 0, sizeof(keyPtr));
+    //bzero(keyPtr, sizeof(keyPtr));
+    [iv getCString:keyPtr maxLength:sizeof(keyPtr) encoding:NSUTF8StringEncoding];
+    
+    NSUInteger diff = kKeySize - (dataLength % kKeySize);//要填充多少位
+    
+    NSUInteger newSize = 0;
+    
+    if (diff > 0)
+    {
+        newSize = dataLength + diff;
+    }
+    
+    char dataPtr[newSize];
+    
+    memcpy(dataPtr, [contentData bytes], dataLength);
+    
+    for (NSUInteger i = 0; i<diff; i++)
+    {
+        dataPtr[i+dataLength] = 0x00;
+    }
+    
+    NSData *keyOriData = [[NSData alloc]initWithBase64EncodedString:base64Encryptkey options:NSDataBase64DecodingIgnoreUnknownCharacters];
+    size_t encryptSize = dataLength + kCCBlockSizeAES128;
+    void *encryptedBytes = malloc(encryptSize);
+    size_t actualOutSize = 0;
+    CCCryptorStatus cryptStatus = CCCrypt(kCCEncrypt,
+                                          kCCAlgorithmAES128,
+                                          0x0000,  // 系统默认使用 CBC, 单独使用kCCOptionPKCS7Padding 表示CBC 如果加入或者话 表示 ECB 至于其他的不太了解
+                                          keyOriData.bytes,
+                                          keyOriData.length,
+                                          keyPtr,
+                                          dataPtr,
+                                          sizeof(dataPtr),
+                                          encryptedBytes,
+                                          encryptSize,
+                                          &actualOutSize);
+    if (cryptStatus == kCCSuccess) {
+        // 对加密后的数据进行 base64 编码
+       // NSLog(@"length : %ld",[[NSData dataWithBytesNoCopy:encryptedBytes length:actualOutSize] length]);
+        return [[NSData dataWithBytesNoCopy:encryptedBytes length:actualOutSize] base64EncodedStringWithOptions:0];
+    }
+    
+    free(encryptedBytes);
+    return nil;
+    
+}
+
+//aes 解密 但是秘钥是base64的字符串 iv偏移量必须是16位
+- (NSString *)decryptAES:(NSString *)content key:(NSString *)base64Key iv:(NSString *)iv {
+    // 把 base64 String 转换成 Data
+    NSData *contentData = [[NSData alloc] initWithBase64EncodedString:content options:NSDataBase64DecodingIgnoreUnknownCharacters];
+    NSUInteger dataLength = contentData.length;
+    char keyPtr[kKeySize + 1];
+    memset(keyPtr, 0, sizeof(keyPtr));
+    [iv getCString:keyPtr maxLength:sizeof(keyPtr) encoding:NSUTF8StringEncoding];
+    
+    NSData *keyOriData = [[NSData alloc] initWithBase64EncodedString:base64Key options:NSDataBase64DecodingIgnoreUnknownCharacters];
+    size_t decryptSize = dataLength + kCCBlockSizeAES128;
+    void *decryptedBytes = malloc(decryptSize);
+    size_t actualOutSize = 0;
+    CCCryptorStatus cryptStatus = CCCrypt(kCCDecrypt,
+                                          kCCAlgorithmAES128,
+                                          0x0000,
+                                          keyOriData.bytes,
+                                          keyOriData.length,
+                                          keyPtr,
+                                          contentData.bytes,
+                                          dataLength,
+                                          decryptedBytes,
+                                          decryptSize,
+                                          &actualOutSize);
+    NSMutableString *str = [NSMutableString string];
+    if (cryptStatus == kCCSuccess) {
+        NSData *ii = [NSData dataWithBytesNoCopy:decryptedBytes length:actualOutSize];
+        NSString *str1 =[[NSString alloc] initWithData:ii encoding:NSUTF8StringEncoding];
+        [str setString:str1.length?str1:@""];
+        NSString *str11 = [NSString stringWithFormat:@"%C",0x0000];
+        return [str stringByReplacingOccurrencesOfString:str11 withString:@""];
+    }
+    free(decryptedBytes);
+    return nil;
+}
+
 
 #pragma mark =================== RSA加密解密 ====================
 

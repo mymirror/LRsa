@@ -24,23 +24,42 @@
  AES加密
  
  @param content     要加密的数据
- @param encryptkey  加密的KEY
+ @param encryptkey  加密的KEY  备注:这个KEY是由UTF8编码的字符串
  @return            加密后的数据
  */
 - (NSString *)encryptAES:(NSString *)content key:(NSString *)encryptkey;
 
 
+/**
+ AES加密
+
+ @param content     需要加密的数据
+ @param base64Encryptkey 加密的KEY 备注:这个KEY是由base64编码得到的字符串
+ @param iv          偏移量 必须为16位
+ @return            加密后的数据
+ */
+- (NSString *)encryptAES:(NSString *)content key:(NSString *)base64Encryptkey iv:(NSString *)iv;
 
 /**
  AES 解密
  
  @param content     要解密的数据
- @param key         解密的KEY
+ @param key         解密的KEY  备注:这个KEY是由UTF8编码的字符串
  @return            解密后的数据
  */
 - (NSString *)decryptAES:(NSString *)content key:(NSString *)key;
 
 
+
+/**
+ AES 解密
+
+ @param content     要解密的数据
+ @param base64Key   解密的KEY  备注：这个KEY是由base64编码得到的字符串
+ @param iv          偏移量 必须为16位
+ @return            解密后的数据
+ */
+- (NSString *)decryptAES:(NSString *)content key:(NSString *)base64Key iv:(NSString *)iv;
 
 /**
  动态获取RSA公私钥
